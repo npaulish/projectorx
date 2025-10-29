@@ -3,7 +3,7 @@
 import warnings
 
 import numpy as np
-from projectors import newProjector, newProjectors
+from projectorx.projectors import newProjector, newProjectors
 from upf_tools import UPFDict
 
 
