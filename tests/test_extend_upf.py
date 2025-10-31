@@ -9,8 +9,9 @@ from projectorx.cli import app
 
 runner = CliRunner()
 
-@pytest.fixture
-def test_data_dir():
+@pytest.fixture(name="test_data_dir")
+def test_data_dir_fixture():
+    """Return the path to the test data directory."""
     return Path(__file__).parent / "data"
 
 def test_extend_upf_creates_expected_output(test_data_dir):

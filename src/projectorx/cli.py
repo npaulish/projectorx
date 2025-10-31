@@ -1,24 +1,20 @@
 """Console script for projectorx."""
 
-import typer
-from rich.console import Console
-
 import os
 from pathlib import Path
 import re
+
+import typer
+from rich.console import Console
+
 
 from projectorx import utils
 from projectorx.fit_hydrogenics import fit_ortho_projectors, fit_rsq_projector, r_hydrogenic
 from projectorx.projectors import newProjector, newProjectors
 from projectorx.upfdict import newUPFDict
 
-current_path = Path(__file__).parent.resolve()
-###-> Set OpenMX location <-###
-pao_path = current_path / "openmx3.9/DFT_DATA19/PAO/"
-
 app = typer.Typer()
 console = Console()
-
 
 @app.command()
 def main():
@@ -26,7 +22,6 @@ def main():
     console.print("Replace this message by putting your code into "
                "projectorx.cli.main")
     console.print("See Typer documentation at https://typer.tiangolo.com/")
-    utils.do_something_useful()
 
 @app.command("extend-upf")
 def extend_upf(
@@ -73,6 +68,8 @@ def extend_upf(
         n = len([_ for _ in pswfcs if orb[1] in _])
         if n == 0:
             # no inner shell found, can only find orbitals from third-party PAO library
+            ###-> Set OpenMX location <-###
+            pao_path = utils.ensure_openmx_exists(Path("../../paolibs/openmx3.9/DFT_DATA19/PAO/"))
             pao_file = (
                 pao_path
                 / [

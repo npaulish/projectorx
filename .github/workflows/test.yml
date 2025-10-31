@@ -21,6 +21,10 @@ jobs:
         python-version: ['3.12', '3.13']
 
     runs-on: ${{ matrix.os }}
+    env:
+      OPENMX_VERSION: "3.9"
+      OPENMX_TAR: "projectorx/paolibs/openmx3.9.tar.gz"
+      PAO_PATH: "projectorx/paolibs/openmx3.9/openmx3.9/DFT_DATA19/PAO"
 
     steps:
     - uses: actions/checkout@v4
@@ -28,6 +32,15 @@ jobs:
       uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
+    # Cache the OpenMX tarball so we don't redownload every run
+    - name: Cache OpenMX tarball
+      id: cache-openmx
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.OPENMX_TAR }}
+        key: openmx-tar-${{ env.OPENMX_VERSION }}-
+          ${{ hashFiles('.github/workflows/test.yml') }}
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -41,6 +54,15 @@ jobs:
     - name: Install project
       run: |
         pip install .
+    # Ensure OpenMX is available (download if not cached)
+    - name: Ensure OpenMX PAO directory
+      run: |
+        python - <<'PYCODE'
+        from pathlib import Path
+        from projectorx import utils
+        utils.ensure_openmx_exists(Path("${{ env.PAO_PATH }}"), auto=True)
+        PYCODE
+
     - name: Run tests
       run: |
         pytest
