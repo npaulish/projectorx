@@ -14,20 +14,24 @@ classifiers = [
 ]
 license = {text = "MIT"}
 dependencies = [
-  "typer",
-  "numpy",
-  "scipy",
-  "upf_tools",
+  "typer>=0.20",
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "upf_tools>=0.1.9",
 ]
 requires-python = ">= 3.10"
 
 [project.optional-dependencies]
 test = [
-    "coverage",  # testing
-    "pytest",  # testing
-    "ruff",  # linting
-    "ty", # checking types
-    "ipdb", # debugging
+    "coverage>=7.6",  # testing
+    "pytest>=8.3",  # testing
+    "ruff>=0.14",  # linting
+    "ty>=0.0.1a24", # checking types
+    "ipdb>=0.13", # debugging
+]
+aiida = [
+    "aiida-core>=2.0",
+    "aiida-wannier90-workflows>=2.0",
 ]
 
 [project.urls]

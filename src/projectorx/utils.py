@@ -33,8 +33,8 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
             file_size = response.getheader("Content-Length")
             if file_size:
                 size_mb = int(file_size) / (1024 * 1024)
-    except Exception:
-        pass
+    except urllib.error.URLError:
+        console.print("[orange]Failed to connect to OpenMX URL.[/orange]")
 
     if size_mb:
         console.print(f"[blue]Approximate download size:[/blue] {size_mb:.1f} MB")
@@ -73,7 +73,12 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
     with tarfile.open(tar_path, "r:gz") as tar:
         tar.extractall(dest_dir)
 
-    tar_path.unlink(missing_ok=True)
+    # Only delete tarball if not in CI mode (to allow caching)
+    if not ci_mode:
+        tar_path.unlink(missing_ok=True)
+        console.print("[blue]Cleaned up the tarball[/blue]")
+    else:
+        console.print(f"[blue]Preserving the tarball for caching:[/blue] {tar_path}")
 
     console.print(f"[green]✓ Extracted OpenMX into[/green] {dest_dir / OPENMX_DIRNAME}")
 
@@ -82,6 +87,6 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
         console.print(f"[red]Error:[/red] Expected PAO directory not found at {expected_pao}")
         raise typer.Exit(1)
 
-    console.print(f"[green]✓ OpenMX setup complete![/green]")
+    console.print("[green]✓ OpenMX setup complete![/green]")
 
     return expected_pao

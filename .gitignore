@@ -1,5 +1,9 @@
 # From https://github.com/github/gitignore/blob/main/Python.gitignore 2025-07-30
 
+# Directories with PAO libraries and external projectors
+paolibs/
+src/projectorx/external_projectors/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
