@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "Tools to generate required projectors for Wannierization"
 readme = "README.md"
 authors = [
-  {name = "Nataliya Paulish", email = "nataliya.paulish@psi.ch"}
+  {name = "Yuhao Jiang", email = "jiangyh@buaa.edu.cn"},
+  {name = "Nataliya Paulish", email = "nataliya.paulish@psi.ch"},
+  {name = "Junfeng Qiao", email = "qiaojunfeng@outlook.com"}
 ]
 maintainers = [
   {name = "Nataliya Paulish", email = "nataliya.paulish@psi.ch"}
