@@ -23,8 +23,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       OPENMX_VERSION: "3.9"
-      OPENMX_TAR: "./paolibs/openmx3.9.tar.gz"
-      PAO_PATH: "./paolibs/openmx3.9/DFT_DATA19/PAO"
+      OPENMX_TAR: "${HOME}/.projectorx/paolibs/openmx3.9.tar.gz"
+      PAO_PATH: "${HOME}/.projectorx/paolibs/openmx3.9/DFT_DATA19/PAO"
 
     steps:
     - uses: actions/checkout@v4

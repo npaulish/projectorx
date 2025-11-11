@@ -73,7 +73,7 @@ def extend_upf(
 
             ###-> Set OpenMX location <-###
             pao_path = utils.ensure_openmx_exists(
-                Path(__file__).parent.parent.parent / "paolibs/openmx3.9/DFT_DATA19/PAO/"
+                Path("~/.projectorx") / "paolibs/openmx3.9/DFT_DATA19/PAO/"
                 )
             pao_file = (
                 pao_path
@@ -150,7 +150,7 @@ def extend_family(
         help="Path to a JSON file defining the required orbitals.",
     ),
     output_dir: Path = typer.Option(
-        Path(__file__).parent / "external_projectors",
+        Path.cwd() / "external_projectors",
         help="Path to the output directory for results.",
     ),
 ):
@@ -179,7 +179,7 @@ def extend_family(
 
     # Ensure OpenMX data
     pao_path = utils.ensure_openmx_exists(
-        Path(__file__).parent.parent.parent / "paolibs/openmx3.9/DFT_DATA19/PAO/"
+        Path("~/.projectorx") / "paolibs/openmx3.9/DFT_DATA19/PAO/"
     )
 
     # Load AiiDA profile
