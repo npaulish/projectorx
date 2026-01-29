@@ -24,6 +24,7 @@ def test_extend_upf_creates_expected_output(test_data_dir):
         result = runner.invoke(app, [
             "extend-upf",
             str(co_upf),
+            "--output-dir",
             tmpdir,
         ])
 

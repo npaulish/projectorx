@@ -27,7 +27,10 @@ def main():
 @app.command("extend-upf")
 def extend_upf(
     input_file: str = typer.Argument(..., help="Path to the input UPF file"),
-    output_dir: str = typer.Argument(..., help="Path to the output directory"),
+    output_dir: Path = typer.Option(
+        Path.cwd(),
+        help="Path to the output directory for result.",
+    )
 ):
     """
     Extend a UPF pseudopotential with additional projectors.
@@ -64,7 +67,7 @@ def extend_upf(
         spin_orbit = True
     # Add additional projectors
     for orb in additional_orbitals:
-        print(orb)
+        console.print(f"  → Adding orbital: {orb}")
         l = str2l[orb[1]]
         n = len([_ for _ in pswfcs if orb[1] in _])
         if n == 0:
@@ -85,7 +88,7 @@ def extend_upf(
             )
             pao = newProjectors.from_pao(pao_file, n, l)[0]
             alpha = fit_rsq_projector(pao, n)
-            print(pao_file, ":", element, n, l, alpha)
+            console.print(f"{pao_file} : {element} {n} {l} {alpha}")
             x = proj[0].x
             r = proj[0].r
             y = r_hydrogenic(r, l, n, alpha)
@@ -110,16 +113,14 @@ def extend_upf(
                         ref.append(p)
 
             if ref is None:
-                raise ValueError(f"Cant find inner projectors for {orb}")
+                raise ValueError(f"Can't find inner projectors for {orb}")
             if isinstance(ref, list):
                 if not len(ref) in [1, 2]:
                     raise ValueError(
                         f"Wrong inner projectors for {orb}, found {len(ref)}"
                     )
-            print("fit from pao ortho")
             if spin_orbit:
                 for ref_ in ref:
-                    print(n)
                     alpha = fit_ortho_projectors(ref_, n)
                     x = proj[0].x
                     r = proj[0].r
