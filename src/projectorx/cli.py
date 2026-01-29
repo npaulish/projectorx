@@ -179,7 +179,7 @@ def extend_family(
 
     # Ensure OpenMX data
     pao_path = utils.ensure_openmx_exists(
-        Path("~/.projectorx") / "paolibs/openmx3.9/DFT_DATA19/PAO/"
+        Path.home() / ".projectorx" / "paolibs/openmx3.9/DFT_DATA19/PAO/"
     )
 
     # Load AiiDA profile
