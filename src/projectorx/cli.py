@@ -23,17 +23,22 @@ def extend_upf(
         Path.cwd(),
         help="Path to the output directory for result.",
     ),
+    required_orbitals: Path = typer.Option(
+        Path(__file__).parent / "required_orbitals.json",
+        help="Path to a JSON file defining the required orbitals per element.",
+    ),
     orbitals: list[str] = typer.Option(
-        ["4p"],
+        None,
         "--orbital",
-        help="Orbital(s) to add, e.g. --orbital 4p,5s or --orbital 4p --orbital 5s.",
+        help=(
+            "Orbital(s) to add, e.g. --orbital 4p,5s or --orbital 4p --orbital 5s. "
+            "Defaults to whichever orbitals from --required-orbitals are missing from the UPF file."
+        ),
     ),
 ):
     """
     Extend a UPF pseudopotential with additional projectors.
     """
-    orbitals = [orb for group in orbitals for orb in group.split(",") if orb]
-
     console.print("[bold green]Extending UPF pseudopotential[/bold green]")
     console.print(f"Input file: {input_file}")
     console.print(f"Output directory: {output_dir}")
@@ -47,8 +52,22 @@ def extend_upf(
         raise KeyError("Can not find element information from UPF file") from exc
     proj = upfdict.to_projectors()
 
-    pswfcs = [_.label for _ in proj]
-    pswfcs = list(set(pswfcs))
+    pswfcs = list(set(_.label for _ in proj))
+
+    if orbitals is None:
+        with open(required_orbitals, encoding="utf-8") as fp:
+            required_orbital_list = json.load(fp)
+        try:
+            orbitals = [orb for orb in required_orbital_list[element] if orb not in pswfcs]
+        except KeyError as exc:
+            raise KeyError(
+                f"No required orbitals defined for element '{element}' in {required_orbitals}. "
+                "Specify orbitals explicitly with --orbital."
+            ) from exc
+        if not orbitals:
+            console.print(f"[green]✓ {element} already has all required orbitals, nothing to add.[/green]")
+    else:
+        orbitals = [orb for group in orbitals for orb in group.split(",") if orb]
 
     # Use fit_projector to get fine alpha, and add additional Projector
     str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
