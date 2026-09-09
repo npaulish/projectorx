@@ -3,8 +3,9 @@
 import warnings
 
 import numpy as np
-from projectorx.projectors import newProjector, newProjectors
 from upf_tools import UPFDict
+
+from projectorx.projectors import newProjector, newProjectors
 
 
 class newUPFDict(UPFDict):
@@ -35,7 +36,7 @@ class newUPFDict(UPFDict):
         soc = self.has_so()
         # If soc: add j info to self
         if soc:
-            if not "jchi" in self["pswfc"]["chi"]:
+            if "jchi" not in self["pswfc"]["chi"]:
                 wfclist = self["spin_orb"]["relwfc"]
                 # wfc list should have same order as pswfc.chi
                 if not isinstance(wfclist, list):
@@ -59,7 +60,7 @@ class newUPFDict(UPFDict):
             dat += [" ".join([f"{chi['j']:4.1f}" for chi in chis])]
         dat += [
             f"{x:20.15f} {r:20.15f} " + " ".join([f"{v:25.15e}" for v in row])
-            for x, r, row in zip(xmesh, rmesh, data)
+            for x, r, row in zip(xmesh, rmesh, data, strict=True)
         ]
 
         return "\n".join(dat)
@@ -85,7 +86,7 @@ class newUPFDict(UPFDict):
         soc = self.has_so()
         # If soc: add j info to self
         if soc:
-            if not "jchi" in self["pswfc"]["chi"]:
+            if "jchi" not in self["pswfc"]["chi"]:
                 wfclist = self["spin_orb"]["relwfc"]
                 # wfc list should have same order as pswfc.chi
                 if not isinstance(wfclist, list):
@@ -131,7 +132,8 @@ class newUPFDict(UPFDict):
         except KeyError:
             has_so = False
             warnings.warn(
-                "Can not find `have_so` in `PP_HEADER`, assume the system as non soc"
+                "Can not find `have_so` in `PP_HEADER`, assume the system as non soc",
+                stacklevel=2,
             )
         else:
             if isinstance(has_so, str):

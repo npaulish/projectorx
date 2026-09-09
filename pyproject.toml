@@ -12,11 +12,20 @@ maintainers = [
   {name = "Nataliya Paulish", email = "nataliya.paulish@psi.ch"}
 ]
 classifiers = [
-    # TODO
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Physics",
 ]
 license = {text = "MIT"}
 dependencies = [
   "typer>=0.20",
+  "rich>=13.0",
   "numpy>=1.24",
   "scipy>=1.10",
   "upf_tools>=0.1.9",
@@ -60,6 +69,10 @@ select = [
     "I",   # isort
     "B",   # flake8-bugbear
     "UP",  # pyupgrade
+]
+ignore = [
+    "E741",  # `l` is the standard notation for the angular momentum quantum number
+    "B008",  # typer.Option()/typer.Argument() calls are required in argument defaults
 ]
 
 [tool.uv]

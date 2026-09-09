@@ -1,11 +1,13 @@
 """ Utility functions for ProjectorX. """
 
 import os
-from pathlib import Path
-import urllib.request
 import tarfile
-from rich.console import Console
+import urllib.error
+import urllib.request
+from pathlib import Path
+
 import typer
+from rich.console import Console
 
 console = Console()
 
@@ -65,7 +67,7 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
             urllib.request.urlretrieve(OPENMX_URL, tar_path)
         except Exception as e:
             console.print(f"[red]Failed to download OpenMX:[/red] {e}")
-            raise typer.Exit(1)
+            raise typer.Exit(1) from e
         console.print(f"[green]✓ Downloaded[/green] {tar_path}")
 
     console.print("[blue]Extracting...[/blue]")

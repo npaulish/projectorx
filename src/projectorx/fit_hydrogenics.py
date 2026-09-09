@@ -113,9 +113,9 @@ def fit_rsq_projector(proj: Projector, n: int) -> float:
     y = proj.y
     l = proj.l
     # y = norm_upf(r, y)
-    rsquare_radial_func = lambda r, alpha: rsquare_hydrogenic(
-        r, l, n, alpha
-    )  # pylint:disable=unnecessary-lambda-assignment
+    def rsquare_radial_func(r, alpha):
+        return rsquare_hydrogenic(r, l, n, alpha)
+
     try:
         pos_popt, pos_pcov = curve_fit(rsquare_radial_func, r, r**2 * y, p0=[3.0])[0:2]
     except RuntimeError:
@@ -156,9 +156,9 @@ def fit_upf_projector(proj: Projector, n: int) -> float:
             r = r[:idx]
             break
 
-    r_radial_func = lambda r, alpha: r_hydrogenic(
-        r, l, n, alpha
-    )  # pylint:disable=unnecessary-lambda-assignment
+    def r_radial_func(r, alpha):
+        return r_hydrogenic(r, l, n, alpha)
+
     try:
         pos_popt, pos_pcov = curve_fit(r_radial_func, r, y, p0=[3.0])[0:2]
     except RuntimeError:
@@ -191,9 +191,10 @@ def fit_projector(proj: Projector, n: int) -> float:
     y = proj.y
     l = proj.l
     alpha_bounds = [0.0, np.inf]
-    radial_func = lambda r, alpha: hydrogenic(
-        r, l, n, alpha
-    )  # pylint:disable=unnecessary-lambda-assignment
+
+    def radial_func(r, alpha):
+        return hydrogenic(r, l, n, alpha)
+
     pos_popt, pos_pcov = curve_fit(radial_func, r, y, p0=[5.0], bounds=alpha_bounds)[
         0:2
     ]
@@ -216,8 +217,6 @@ def fit_ortho_projectors(proj: Projector, n: int) -> float:
     :param n: Num of semicore shells.
     :return: alpha that fits the given projectors best.
     """
-    # import matplotlib.pyplot as plt
-
     r = proj.r
     y = proj.y  # y = r * radial function
     l = proj.l
@@ -226,9 +225,10 @@ def fit_ortho_projectors(proj: Projector, n: int) -> float:
     dr[0] = r[0] - 0.0
     alpha_list = []
     overlap = []
-    radial_func = lambda r, alpha: hydrogenic(
-        r, l, n, alpha
-    )  # pylint:disable=unnecessary-lambda-assignment
+
+    def radial_func(r, alpha):
+        return hydrogenic(r, l, n, alpha)
+
     for alpha in np.linspace(1.0, 10.0, 90, endpoint=False):
         alpha_list.append(alpha)
         ovlp = np.sum(  # 4*pi* radial1 * radial2 * r^2 *dr
@@ -239,12 +239,6 @@ def fit_ortho_projectors(proj: Projector, n: int) -> float:
     alpha_list = np.array(alpha_list)
     ortho_loc = np.where(np.abs(overlap) == np.min(np.abs(overlap)))[0][0]
     alpha = alpha_list[ortho_loc]
-    # fig = plt.figure()
-    # ax = fig.add_subplot(1, 1, 1)
-    # ax.plot(alpha, overlap)
-    # print(label, label[1], alpha)
-    # ax.set_title(f"{element}: {label[1]} overlap, alpha={alpha}")
-    # fig.savefig(f"{element}_{label[1]}.png")
     return alpha
 
 

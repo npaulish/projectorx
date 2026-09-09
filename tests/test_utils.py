@@ -1,8 +1,6 @@
-import io
-import tarfile
 from pathlib import Path
-import urllib.request
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
 import pytest
 import typer
 
@@ -37,7 +35,7 @@ def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretr
         # Simulate extraction by creating the expected PAO directory
         extracted_pao = Path(path) / "openmx3.9/DFT_DATA19/PAO"
         extracted_pao.mkdir(parents=True, exist_ok=True)
-    
+
     mock_tar.extractall.side_effect = fake_extractall
 
     with patch("urllib.request.urlopen") as mock_urlopen:

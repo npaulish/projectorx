@@ -1,13 +1,12 @@
 """Console script for projectorx."""
 
-import os
-from pathlib import Path
-import re
 import json
+import os
+import re
+from pathlib import Path
 
 import typer
 from rich.console import Console
-
 
 from projectorx import utils
 from projectorx.fit_hydrogenics import fit_ortho_projectors, fit_rsq_projector, r_hydrogenic
@@ -17,24 +16,24 @@ from projectorx.upfdict import newUPFDict
 app = typer.Typer()
 console = Console()
 
-@app.command()
-def main():
-    """Console script for projectorx."""
-    console.print("Replace this message by putting your code into "
-               "projectorx.cli.main")
-    console.print("See Typer documentation at https://typer.tiangolo.com/")
-
 @app.command("extend-upf")
 def extend_upf(
     input_file: str = typer.Argument(..., help="Path to the input UPF file"),
     output_dir: Path = typer.Option(
         Path.cwd(),
         help="Path to the output directory for result.",
-    )
+    ),
+    orbitals: list[str] = typer.Option(
+        ["4p"],
+        "--orbital",
+        help="Orbital(s) to add, e.g. --orbital 4p,5s or --orbital 4p --orbital 5s.",
+    ),
 ):
     """
     Extend a UPF pseudopotential with additional projectors.
     """
+    orbitals = [orb for group in orbitals for orb in group.split(",") if orb]
+
     console.print("[bold green]Extending UPF pseudopotential[/bold green]")
     console.print(f"Input file: {input_file}")
     console.print(f"Output directory: {output_dir}")
@@ -49,24 +48,14 @@ def extend_upf(
     proj = upfdict.to_projectors()
 
     pswfcs = [_.label for _ in proj]
-    # pswfcs = ["3s", "3p", "3p", "3d", "3d", "4s"]
     pswfcs = list(set(pswfcs))
-    # pswfcs = ["3s", "3p", "3d", "4s"]
-
-    ###-> Set additional orbitals we need <-###
-    additional_orbitals = ["4p"]
 
     # Use fit_projector to get fine alpha, and add additional Projector
     str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
 
-    try:
-        proj[0].j
-    except AttributeError:
-        spin_orbit = False
-    else:
-        spin_orbit = True
+    spin_orbit = hasattr(proj[0], "j")
     # Add additional projectors
-    for orb in additional_orbitals:
+    for orb in orbitals:
         console.print(f"  → Adding orbital: {orb}")
         l = str2l[orb[1]]
         n = len([_ for _ in pswfcs if orb[1] in _])
@@ -115,7 +104,7 @@ def extend_upf(
             if ref is None:
                 raise ValueError(f"Can't find inner projectors for {orb}")
             if isinstance(ref, list):
-                if not len(ref) in [1, 2]:
+                if len(ref) not in [1, 2]:
                     raise ValueError(
                         f"Wrong inner projectors for {orb}, found {len(ref)}"
                     )
@@ -253,9 +242,11 @@ def extend_family(
                 r, x = proj[0].r, proj[0].x
                 y = r_hydrogenic(r, l, n, alpha)
 
-                proj.add_projector_soc(newProjector(x, y, l, label=addit_orb, alpha=alpha)) if spin_orbit else proj.add_projector(
-                    newProjector(x, y, l, label=addit_orb, alpha=alpha)
-                )
+                new_proj = newProjector(x, y, l, label=addit_orb, alpha=alpha)
+                if spin_orbit:
+                    proj.add_projector_soc(new_proj)
+                else:
+                    proj.add_projector(new_proj)
             else:
                 ref = [p for p in proj if (int(p.label[0]) == int(addit_orb[0]) - 1)
                        and (p.label[1].lower() == addit_orb[1].lower())]

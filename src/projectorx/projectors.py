@@ -1,8 +1,7 @@
 """Override of upf_tools.Projector and .Projectors."""
 
-from dataclasses import dataclass, field
+from dataclasses import InitVar, dataclass, field
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 from upf_tools.projectors import Projector, Projectors
@@ -15,14 +14,19 @@ class newProjector(Projector):
     """Override of upf_tools.Projctor."""
 
     _x_min: float = field(default=-25, init=False, repr=False)
-    j: float = field(init=False)  # for spin orbit coupling
-    _j: float = field(init=False, repr=False)
-    label: str = field(init=True, default=None)
-    _label: str = field(init=False, repr=False)
-    alpha: str = field(init=True, default="UPF")
+    j: InitVar[float | None] = None  # for spin orbit coupling
+    _j: float = field(init=False, repr=False, default=0.0)
+    label: InitVar[str | None] = None
+    _label: str = field(init=False, repr=False, default="")
+    alpha: str = "UPF"
+
+    def __post_init__(self, j, label):
+        """Run the `j` and `label` values through their property setters."""
+        self.j = j
+        self.label = label
 
     @property
-    def j(self):
+    def j(self):  # noqa: F811 -- InitVar `j` above feeds this property via __post_init__
         """Total angular momentum number."""
         if np.abs(self._j) < 1e-8:
             raise AttributeError("j is not an attribute.")
@@ -40,7 +44,7 @@ class newProjector(Projector):
             raise ValueError(f"l={self.l}, j={self._j}")
 
     @property
-    def label(self):
+    def label(self):  # noqa: F811 -- InitVar `label` above feeds this property via __post_init__
         """Orbital label.
 
         n_shell+orbital_label(lower case)
@@ -91,43 +95,13 @@ class newProjectors(Projectors):
     def to_file(self, filename: Path):
         """Dump the Projectors to a file following the format for ``pw2wannier90`` and ``Wannier90``."""
         with open(filename, "w", encoding="utf-8") as fd:
-            try:
-                self[0].j
-            except AttributeError:
-                fd.write(self.to_str())
-            else:
+            if hasattr(self[0], "j"):
                 fd.write(self.to_str_soc())
-
-    #
-    # Use myUPFDict.to_projectors instead of newProjectors.from_upfdata
-    #
-    # @classmethod
-    # def from_upfdata(cls, upfdata:Union[UpfData, int]):
-    #     """Create a Projectors object from an AiiDA UPFData"""
-
-    #     load_profile()
-    #     #check if upfdata is a formatted UPFData or the pk of upf
-    #     if not isinstance(upfdata, UpfData):
-    #         upfdata = orm.load_node(upfdata)
-    #         if not isinstance(upfdata, UpfData):
-    #             raise ValueError(
-    #                 "Input must be either `UpfData` or its pk."
-    #                 f"But the input is {upfdata.__class__}"
-    #             )
-
-    #     # get content from UpfData and convert it to Projectors
-    #     upf_str = upfdata.get_content()
-    #     upf_dict = myUPFDict.from_str(upf_str)
-
-    #     if upf_dict.has_so():
-    #         projector = cls.from_str_soc(upf_dict.to_dat())
-    #     else:
-    #         projector = cls.from_str(upf_dict.to_dat())
-
-    #     return projector
+            else:
+                fd.write(self.to_str())
 
     @classmethod
-    def from_pao(cls, filename: Union[Path, str], n: int, l: int, label: str = None):
+    def from_pao(cls, filename: Path | str, n: int, l: int, label: str = None):
         """Create a Projectors object from an openMX flavor PAO file."""
 
         filename = filename if isinstance(filename, Path) else Path(filename)
@@ -169,7 +143,7 @@ class newProjectors(Projectors):
         jvals = [float(j) for j in lines[2].split()]
         data = [
             newProjector(content[0], y, l, j)
-            for l, j, y in zip(lvals, jvals, content[2:])
+            for l, j, y in zip(lvals, jvals, content[2:], strict=True)
         ]
 
         return cls(data)
@@ -184,30 +158,11 @@ class newProjectors(Projectors):
 
         If the projector has only l, split it to different j with same radials funtction.
         """
-        try:
-            projector.j
-        except AttributeError:
-            if projector.l == 0:
-                self += [
-                    newProjector(
-                        x=projector.x,
-                        y=projector.y,
-                        l=projector.l,
-                        j=projector.l + 0.5,
-                        label=projector.label,
-                        alpha=projector.alpha,
-                    )
-                ]
-            else:
-                projector_minus = newProjector(
-                    x=projector.x,
-                    y=projector.y,
-                    l=projector.l,
-                    j=projector.l - 0.5,
-                    label=projector.label,
-                    alpha=projector.alpha,
-                )
-                projector_plus = newProjector(
+        if hasattr(projector, "j"):
+            self += [projector]
+        elif projector.l == 0:
+            self += [
+                newProjector(
                     x=projector.x,
                     y=projector.y,
                     l=projector.l,
@@ -215,20 +170,22 @@ class newProjectors(Projectors):
                     label=projector.label,
                     alpha=projector.alpha,
                 )
-                self += [projector_minus, projector_plus]
+            ]
         else:
-            self += [projector]
-
-    # def remove_low(self, l: int):
-    #     """Remove the lowest orbital with specific l."""
-
-    #     have_removed = False
-    #     for i, projector in enumerate(self.data):
-    #         # Because the projectors was sortted by l, n
-    #         # It is safe to just remove the lowest pswfc
-    #         if projector.l == l and not have_removed:
-    #             del self(i)
-    #             have_removed = True
-
-    #     if not have_removed:
-    #         raise ValueError(f"Can not remove pswfcs with l={l}")
+            projector_minus = newProjector(
+                x=projector.x,
+                y=projector.y,
+                l=projector.l,
+                j=projector.l - 0.5,
+                label=projector.label,
+                alpha=projector.alpha,
+            )
+            projector_plus = newProjector(
+                x=projector.x,
+                y=projector.y,
+                l=projector.l,
+                j=projector.l + 0.5,
+                label=projector.label,
+                alpha=projector.alpha,
+            )
+            self += [projector_minus, projector_plus]
