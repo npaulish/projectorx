@@ -63,11 +63,16 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
         console.print(f"[blue]Using cached OpenMX tarball:[/blue] {tar_path}")
     else:
         console.print(f"[blue]Downloading OpenMX from {OPENMX_URL} ...[/blue]")
+        # Download to a temporary name and rename on success, so an interrupted
+        # download is never mistaken for a complete, valid cached tarball later.
+        tmp_path = tar_path.with_name(tar_path.name + ".part")
         try:
-            urllib.request.urlretrieve(OPENMX_URL, tar_path)
+            urllib.request.urlretrieve(OPENMX_URL, tmp_path)
         except Exception as e:
+            tmp_path.unlink(missing_ok=True)
             console.print(f"[red]Failed to download OpenMX:[/red] {e}")
             raise typer.Exit(1) from e
+        tmp_path.rename(tar_path)
         console.print(f"[green]✓ Downloaded[/green] {tar_path}")
 
     console.print("[blue]Extracting...[/blue]")

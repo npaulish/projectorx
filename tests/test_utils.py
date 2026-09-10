@@ -27,9 +27,15 @@ def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretr
     monkeypatch.setenv("CI", "false")
 
     pao_path = tmp_path / "openmx3.9/DFT_DATA19/PAO"
+    tar_path = tmp_path / "openmx3.9.tar.gz"
+    tmp_tar_path = tmp_path / "openmx3.9.tar.gz.part"
 
-    # mock urlretrieve to simulate successful download
-    mock_urlretrieve.return_value = (str(tmp_path / "openmx3.9.tar.gz"), None)
+    # mock urlretrieve to simulate downloading to the temporary ``.part`` file
+    def fake_urlretrieve(url, filename):
+        Path(filename).touch()
+        return (str(filename), None)
+
+    mock_urlretrieve.side_effect = fake_urlretrieve
 
     # mock tarfile to simulate extraction
     mock_tar = MagicMock()
@@ -50,7 +56,9 @@ def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretr
         result = utils.ensure_openmx_exists(pao_path, auto=True)
 
     # Assertions
-    mock_urlretrieve.assert_called_once_with(utils.OPENMX_URL, tmp_path / "openmx3.9.tar.gz")
+    mock_urlretrieve.assert_called_once_with(utils.OPENMX_URL, tmp_tar_path)
+    assert not tmp_tar_path.exists()  # renamed to tar_path, not left behind
+    assert not tar_path.exists()  # cleaned up after extraction (non-CI mode)
     mock_tar.extractall.assert_called_once_with(tmp_path)
     assert result.exists()
     assert "openmx3.9/DFT_DATA19/PAO" in str(result)
