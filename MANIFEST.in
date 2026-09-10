@@ -2,6 +2,7 @@ include CONTRIBUTING.md
 include HISTORY.md
 include LICENSE
 include README.md
+include src/projectorx/required_orbitals.json
 
 recursive-include tests *
 recursive-exclude * __pycache__

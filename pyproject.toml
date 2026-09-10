@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "projectorx"
 version = "0.1.0"
@@ -74,6 +78,9 @@ ignore = [
     "E741",  # `l` is the standard notation for the angular momentum quantum number
     "B008",  # typer.Option()/typer.Argument() calls are required in argument defaults
 ]
+
+[tool.setuptools.package-data]
+projectorx = ["required_orbitals.json"]
 
 [tool.uv]
 package = true

@@ -20,8 +20,12 @@ def test_ensure_openmx_exists_already_present(tmp_path):
 
 @patch("urllib.request.urlretrieve")
 @patch("tarfile.open")
-def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretrieve, tmp_path):
+def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretrieve, tmp_path, monkeypatch):
     """Simulate missing OpenMX directory and ensure download + extract workflow."""
+    # Pin non-CI behavior (tarball cleanup) regardless of the ambient environment
+    # -- GitHub Actions sets CI=true, which intentionally preserves the tarball.
+    monkeypatch.setenv("CI", "false")
+
     pao_path = tmp_path / "openmx3.9/DFT_DATA19/PAO"
 
     # mock urlretrieve to simulate successful download
