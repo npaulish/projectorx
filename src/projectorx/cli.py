@@ -146,6 +146,38 @@ def _add_orbitals(proj: newProjectors, element: str, orbitals: list[str]) -> Non
                 proj.add_projector(newProjector(x, y, l, label=orb, alpha=alpha))
 
 
+def extend_upf_impl(
+    input_file: str,
+    output_dir: Path = Path("."),
+    required_orbitals: Path = DEFAULT_REQUIRED_ORBITALS,
+    orbitals: list[str] | None = None,
+) -> Path:
+    """Extend a UPF pseudopotential with additional projectors.
+
+    Plain-Python entry point (no typer involved), safe to import and call
+    directly from other code. Returns the path to the written ``.dat`` file.
+    """
+    console.print("[bold green]Extending UPF pseudopotential[/bold green]")
+    console.print(f"Input file: {input_file}")
+    console.print(f"Output directory: {output_dir}")
+
+    upfdict = _load_upf(Path(input_file))
+    element = _get_element(upfdict)
+    proj = upfdict.to_projectors()
+
+    with open(required_orbitals, encoding="utf-8") as fp:
+        required_orbital_list = json.load(fp)
+    orbitals_to_add = _resolve_orbitals(proj, element, orbitals, required_orbital_list)
+
+    if not orbitals_to_add:
+        console.print(f"[green]✓ {element} already has all required orbitals, nothing to add.[/green]")
+    _add_orbitals(proj, element, orbitals_to_add)
+
+    output_file = Path(output_dir) / f"{element}.dat"
+    proj.to_file(output_file)
+    return output_file
+
+
 @app.command("extend-upf")
 def extend_upf(
     input_file: str = typer.Argument(..., help="Path to the input UPF file"),
@@ -169,47 +201,28 @@ def extend_upf(
     """
     Extend a UPF pseudopotential with additional projectors.
     """
-    console.print("[bold green]Extending UPF pseudopotential[/bold green]")
-    console.print(f"Input file: {input_file}")
-    console.print(f"Output directory: {output_dir}")
-
-    upfdict = _load_upf(Path(input_file))
-    element = _get_element(upfdict)
-    proj = upfdict.to_projectors()
-
-    with open(required_orbitals, encoding="utf-8") as fp:
-        required_orbital_list = json.load(fp)
-    orbitals_to_add = _resolve_orbitals(proj, element, orbitals, required_orbital_list)
-
-    if not orbitals_to_add:
-        console.print(f"[green]✓ {element} already has all required orbitals, nothing to add.[/green]")
-    _add_orbitals(proj, element, orbitals_to_add)
-
-    # Output .dat file
-    proj.to_file(f"{output_dir}/{element}.dat")
+    extend_upf_impl(input_file, output_dir, required_orbitals, orbitals)
 
 
-@app.command("extend-library")
-def extend_library(
-    input_dir: Path = typer.Argument(
-        ...,
-        help="Directory containing UPF pseudopotential files (*.upf / *.UPF).",
-    ),
-    output_dir: Path = typer.Option(
-        Path.cwd() / "external_projectors",
-        help="Path to the output directory for results.",
-    ),
-    required_orbitals: Path = typer.Option(
-        DEFAULT_REQUIRED_ORBITALS,
-        help="Path to a JSON file defining the required orbitals per element.",
-    ),
-):
+def extend_library_impl(
+    input_dir: Path,
+    output_dir: Path = Path("external_projectors"),
+    required_orbitals: Path = DEFAULT_REQUIRED_ORBITALS,
+) -> dict:
+    """Extend every UPF pseudopotential in a directory with additional projectors.
+
+    For each file, adds whichever orbitals `required_orbitals` lists for its
+    element that aren't already present. Plain-Python entry point, safe to
+    import and call directly from other code (e.g. after dumping the members
+    of an AiiDA pseudo family to `input_dir`).
+
+    Returns a dict with `"projectors"` (the summary also written to
+    `output_dir/projectors.json`) and `"failures"` (filename -> error message
+    for files that could not be extended).
     """
-    Extend every UPF pseudopotential in a directory with additional projectors.
+    input_dir = Path(input_dir)
+    output_dir = Path(output_dir)
 
-    For each file, adds whichever orbitals --required-orbitals lists for its
-    element that aren't already present.
-    """
     upf_files = sorted({*input_dir.glob("*.upf"), *input_dir.glob("*.UPF")})
     if not upf_files:
         console.print(f"[red]No .upf files found in {input_dir}[/red]")
@@ -269,152 +282,32 @@ def extend_library(
         for name, err in failures.items():
             console.print(f"    {name}: {err}")
 
-@app.command("extend-family")
-def extend_family(
-    pseudo_family: str = typer.Argument(
+    return {"projectors": projectors_summary, "failures": failures}
+
+
+@app.command("extend-library")
+def extend_library(
+    input_dir: Path = typer.Argument(
         ...,
-        help="AiiDA pseudo family to extend (label as set with aiida-pseudo package).",
-    ),
-    required_orbitals: Path = typer.Option(
-        DEFAULT_REQUIRED_ORBITALS,
-        help="Path to a JSON file defining the required orbitals.",
+        help="Directory containing UPF pseudopotential files (*.upf / *.UPF).",
     ),
     output_dir: Path = typer.Option(
         Path.cwd() / "external_projectors",
         help="Path to the output directory for results.",
     ),
+    required_orbitals: Path = typer.Option(
+        DEFAULT_REQUIRED_ORBITALS,
+        help="Path to a JSON file defining the required orbitals per element.",
+    ),
 ):
     """
-    Extend an existing AiiDA pseudo family with additional atomic projectors.
+    Extend every UPF pseudopotential in a directory with additional projectors.
+
+    For each file, adds whichever orbitals --required-orbitals lists for its
+    element that aren't already present.
     """
-    try:
-        from aiida import load_profile, orm
-    except ImportError as exc:
-        console.print(
-            "[red]Error:[/red] AiiDA is not installed. " \
-            "This function is intended to provide additional orbitals for an AiiDA pseudo family" \
-            " for Wannierisation with AiiDA workflows. " \
-            "Please install with "
-            "`pip install aiida-core`."
-        )
-        raise typer.Exit(1) from exc
-    try:
-        from aiida_wannier90_workflows.utils.pseudo.data import load_pseudo_metadata
-    except ImportError as exc:
-        console.print(
-            "[red]Error:[/red] AiiDA-Wannier90-Workflows is not installed. Please install with "
-            "`pip install aiida-wannier90-workflows`."
-        )
-        raise typer.Exit(1) from exc
+    extend_library_impl(input_dir, output_dir, required_orbitals)
 
-    # Ensure OpenMX data
-    pao_path = utils.ensure_openmx_exists(
-        Path.home() / ".projectorx" / "paolibs/openmx3.9/DFT_DATA19/PAO/"
-    )
-
-    # Load AiiDA profile
-    load_profile()
-
-    # Load required orbitals and semicore data
-    with open(required_orbitals, encoding="utf-8") as fp:
-        required_orbital_list = json.load(fp)
-
-    try:
-        upfs = orm.load_group(pseudo_family)
-    except KeyError as exc:
-        console.print(
-            f"[red]Error:[/red] Could not find pseudo family '{pseudo_family}'"
-            " in the AiiDA database."
-            " Try installing the family with `aiida-pseudo install` or check the family name."
-        )
-        raise typer.Exit(1) from exc
-
-    try:
-        pswfc = load_pseudo_metadata(f"semicore/{pseudo_family.replace('/', '_')}.json")
-    except FileNotFoundError as exc:
-        console.print(
-            f"[red]Error:[/red] Could not find semicore files for pseudo family '{pseudo_family}'. "
-            "This family is not supported by aiida-wannier90-workflows. "
-            "Try using the latest version of aiida-wannier90-workflows package."
-        )
-        raise typer.Exit(1) from exc
-
-    str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
-    projectors = {}
-
-    output_dir = output_dir / pseudo_family.replace("/", "_")
-    output_dir.mkdir(parents=True, exist_ok=True)
-
-    for upf in upfs.nodes:
-        element = upf.element
-        if element not in required_orbital_list:
-            continue
-
-        console.print(f"[cyan]Processing element:[/cyan] {element}")
-
-        pswfc[element]["additional"] = [
-            ao
-            for ao in required_orbital_list[element]
-            if ao.upper() not in pswfc[element]["pswfcs"]
-        ]
-
-        upfdict = newUPFDict.from_str(upf.get_content())
-        proj = upfdict.to_projectors()
-        spin_orbit = hasattr(proj[0], "j")
-
-        for addit_orb in pswfc[element]["additional"]:
-            console.print(f"  → Adding orbital: {addit_orb}")
-            l = str2l[addit_orb[1]]
-            n = len([_ for _ in pswfc[element]["pswfcs"] if addit_orb[1].upper() in _])
-
-            if n == 0:
-                pao_file = next(
-                    (pao_path / f for f in os.listdir(pao_path)
-                     if re.match(rf"{element}[0-9]*\.0.*\.pao", f)),
-                    None
-                )
-                if pao_file is None:
-                    console.print(f"[red]No PAO file found for {element}![/red]")
-                    continue
-
-                pao = newProjectors.from_pao(pao_file, n, l)[0]
-                alpha = fit_rsq_projector(pao, n)
-                r, x = proj[0].r, proj[0].x
-                y = r_hydrogenic(r, l, n, alpha)
-
-                new_proj = newProjector(x, y, l, label=addit_orb, alpha=alpha)
-                if spin_orbit:
-                    proj.add_projector_soc(new_proj)
-                else:
-                    proj.add_projector(new_proj)
-            else:
-                ref = [p for p in proj if (int(p.label[0]) == int(addit_orb[0]) - 1)
-                       and (p.label[1].lower() == addit_orb[1].lower())]
-                if not ref:
-                    console.print(f"[red]No reference projector found for {addit_orb}![/red]")
-                    continue
-
-                alpha = fit_ortho_projectors(ref[0], n)
-                r, x = proj[0].r, proj[0].x
-                y = r_hydrogenic(r, l, n, alpha)
-                proj.add_projector(newProjector(x, y, l, label=addit_orb, alpha=alpha))
-
-        proj.to_file(output_dir / f"{element}.dat")
-
-        projectors[element] = [
-            {
-                "label": p.label,
-                "l": p.l,
-                **({"j": p.j} if spin_orbit else {}),
-                "alpha": p.alpha,
-            }
-            for p in proj
-        ]
-
-    with open(output_dir / "projectors.json", "w", encoding="utf-8") as fp:
-        json.dump(projectors, fp, indent=2)
-
-    console.print(f"[green]✓ Extended family saved to[/green] {output_dir}")
 
 if __name__ == "__main__":
     app()

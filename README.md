@@ -15,7 +15,7 @@ For more details refer to Y. Jiang et al. "Robust Wannierization including magne
 ## Features
 
 * Extend a UPF pseudopotential with additional projectors via `projectorx extend-upf INPUT_FILE OUTPUT_DIR`.
-* Extend an existing AiiDA pseudo family with additional atomic projectors via `projectorx extend-family PSEUDO_FAMILY_LABEL`.
+* Extend every UPF pseudopotential in a directory via `projectorx extend-library INPUT_DIR`.
 
 
 ## Credits
