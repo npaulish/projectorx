@@ -4,7 +4,9 @@ include LICENSE
 include README.md
 include src/projectorx/required_orbitals.json
 
-recursive-include tests *
+# Tests (and their third-party data, see tests/data/README.md) stay in the
+# git repository only; they are not shipped in the sdist or the wheel.
+prune tests
 recursive-exclude * __pycache__
 recursive-exclude * *.py[co]
 
