@@ -1,11 +1,14 @@
 import json
+import shutil
 import tempfile
 import warnings
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from typer.testing import CliRunner
 
+from projectorx import utils
 from projectorx.cli import app
 
 runner = CliRunner()
@@ -46,3 +49,33 @@ def test_extend_library_processes_all_and_skips_broken_files():
         # broken.upf should be recorded as a failure, not silently dropped or fatal.
         summary = json.loads((Path(tmpdir) / "projectors.json").read_text())
         assert list(summary.keys()) == ["Co"]
+
+
+def test_extend_library_stops_once_when_openmx_unavailable(tmp_path):
+    """If OpenMX is declined/unavailable, extend-library must stop instead of re-prompting per element."""
+    data_dir = Path(__file__).parent / "data"
+    input_dir = tmp_path / "pseudos"
+    input_dir.mkdir()
+    shutil.copy(data_dir / "Co.upf", input_dir / "Co.upf")
+    shutil.copy(data_dir / "Co.upf", input_dir / "Co_copy.upf")
+
+    # Co.upf has no f shell, so requiring 4f forces the OpenMX PAO path.
+    required = tmp_path / "required.json"
+    required.write_text(json.dumps({"Co": ["4f"]}), encoding="utf-8")
+
+    with patch(
+        "projectorx.utils.ensure_openmx_exists",
+        side_effect=utils.OpenMXUnavailableError("OpenMX download declined."),
+    ) as mock_ensure:
+        result = runner.invoke(app, [
+            "extend-library",
+            str(input_dir),
+            "--output-dir",
+            str(tmp_path / "out"),
+            "--required-orbitals",
+            str(required),
+        ])
+
+    assert result.exit_code == 1, result.output
+    mock_ensure.assert_called_once()
+    assert "declined" in result.output

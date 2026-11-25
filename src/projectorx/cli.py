@@ -1,8 +1,6 @@
 """Console script for projectorx."""
 
 import json
-import os
-import re
 from pathlib import Path
 
 import typer
@@ -46,6 +44,14 @@ def _get_element(upfdict: newUPFDict) -> str:
     return str(element).strip()
 
 
+def _get_z_valence(upfdict: newUPFDict) -> float | None:
+    """Read ``z_valence`` from a UPF header, or None if it is missing or unparsable."""
+    try:
+        return float(upfdict["header"]["z_valence"])
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def _resolve_orbitals(
     proj: newProjectors,
     element: str,
@@ -71,7 +77,9 @@ def _resolve_orbitals(
         ) from exc
 
 
-def _add_orbitals(proj: newProjectors, element: str, orbitals: list[str]) -> None:
+def _add_orbitals(
+    proj: newProjectors, element: str, orbitals: list[str], z_valence: float | None = None
+) -> None:
     """Fit and add `orbitals` to `proj` in place."""
     pswfcs = list(set(p.label for p in proj))
     str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
@@ -88,12 +96,7 @@ def _add_orbitals(proj: newProjectors, element: str, orbitals: list[str]) -> Non
             pao_path = utils.ensure_openmx_exists(
                 Path.home() / ".projectorx" / "paolibs/openmx3.9/DFT_DATA19/PAO/"
             )
-            pao_candidates = [
-                f for f in os.listdir(pao_path) if re.match(rf"{element}[0-9]*\.0.*\.pao", f)
-            ]
-            if not pao_candidates:
-                raise FileNotFoundError(f"No PAO file found for element {element} in {pao_path}")
-            pao_file = pao_path / pao_candidates[0]
+            pao_file = utils.select_pao_file(pao_path, element, z_valence)
             pao = newProjectors.from_pao(pao_file, n, l)[0]
             alpha = fit_rsq_projector(pao, n)
             console.print(f"{pao_file} : {element} {n} {l} {alpha}")
@@ -171,7 +174,7 @@ def extend_upf_impl(
 
     if not orbitals_to_add:
         console.print(f"[green]✓ {element} already has all required orbitals, nothing to add.[/green]")
-    _add_orbitals(proj, element, orbitals_to_add)
+    _add_orbitals(proj, element, orbitals_to_add, _get_z_valence(upfdict))
 
     output_file = Path(output_dir) / f"{element}.dat"
     proj.to_file(output_file)
@@ -201,7 +204,11 @@ def extend_upf(
     """
     Extend a UPF pseudopotential with additional projectors.
     """
-    extend_upf_impl(input_file, output_dir, required_orbitals, orbitals)
+    try:
+        extend_upf_impl(input_file, output_dir, required_orbitals, orbitals)
+    except utils.OpenMXUnavailableError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from exc
 
 
 def extend_library_impl(
@@ -246,10 +253,11 @@ def extend_library_impl(
             orbitals_to_add = _resolve_orbitals(proj, element, None, required_orbital_list)
             if not orbitals_to_add:
                 console.print(f"[green]✓ {element} already has all required orbitals.[/green]")
-            _add_orbitals(proj, element, orbitals_to_add)
-        except typer.Abort:
-            # The user declined (or couldn't answer) the OpenMX download prompt;
-            # every later element needing PAO fitting would hit the same wall.
+            _add_orbitals(proj, element, orbitals_to_add, _get_z_valence(upfdict))
+        except (utils.OpenMXUnavailableError, typer.Abort):
+            # The user declined (or couldn't answer) the OpenMX download prompt, or
+            # the download failed; every later element needing PAO fitting would hit
+            # the same wall (and re-prompt), so stop the whole run here.
             console.print("[red]Aborted: OpenMX download declined or unavailable.[/red]")
             raise
         except Exception as exc:  # noqa: BLE001 -- keep processing the rest of the library
@@ -306,7 +314,11 @@ def extend_library(
     For each file, adds whichever orbitals --required-orbitals lists for its
     element that aren't already present.
     """
-    extend_library_impl(input_dir, output_dir, required_orbitals)
+    try:
+        extend_library_impl(input_dir, output_dir, required_orbitals)
+    except utils.OpenMXUnavailableError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from exc
 
 
 if __name__ == "__main__":
