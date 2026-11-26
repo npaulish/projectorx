@@ -1,7 +1,6 @@
 # Projector Extensions
 
 ![PyPI version](https://img.shields.io/pypi/v/projectorx.svg)
-[![Documentation Status](https://readthedocs.org/projects/projectorx/badge/?version=latest)](https://projectorx.readthedocs.io/en/latest/?version=latest)
 
 Tools to generate required projectors for Wannierization based on pseudo-atomic orbitals (PAOs). In case a pseudopotential does not contain enough orbitals, PAOs are extended with additional orbitals from OpenMX library: https://www.openmx-square.org.
 
@@ -10,12 +9,16 @@ For more details refer to Y. Jiang et al. "Robust Wannierization including magne
 
 * PyPI package: https://pypi.org/project/projectorx/
 * Free software: MIT License
-* Documentation: https://projectorx.readthedocs.io.
+* Documentation: [docs/](docs/index.md)
 
 ## Features
 
-* Extend a UPF pseudopotential with additional projectors via `projectorx extend-upf INPUT_FILE OUTPUT_DIR`.
-* Extend every UPF pseudopotential in a directory via `projectorx extend-library INPUT_DIR`.
+* Extend a UPF pseudopotential with additional projectors: `projectorx extend-upf INPUT_FILE [--output-dir DIR] [--orbital 4p,5s]`.
+* Extend every UPF pseudopotential in a directory: `projectorx extend-library INPUT_DIR [--output-dir DIR]`.
+* Missing orbitals are built as hydrogenic functions, either orthogonal to the inner shell with the same l or fitted to an OpenMX pseudo-atomic orbital (downloaded on first use).
+* Spin-orbit pseudopotentials are supported.
+
+See [Usage](docs/usage.md) for the options, how orbitals are chosen, and the output format.
 
 
 ## Credits

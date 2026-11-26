@@ -21,13 +21,13 @@ The source files for Projector Extensions can be downloaded from the [Github rep
 You can either clone the public repository:
 
 ```sh
-git clone git://github.com/npaulish/projectorx
+git clone https://github.com/npaulish/projectorx.git
 ```
 
-Or download the [tarball](https://github.com/npaulish/projectorx/tarball/master):
+Or download the [tarball](https://github.com/npaulish/projectorx/tarball/main):
 
 ```sh
-curl -OJL https://github.com/npaulish/projectorx/tarball/master
+curl -OJL https://github.com/npaulish/projectorx/tarball/main
 ```
 
 Once you have a copy of the source, you can install it with:

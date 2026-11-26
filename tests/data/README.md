@@ -13,7 +13,7 @@ As their file headers request, please cite D. R. Hamann, Phys. Rev. B 88, 085117
 
 | File | Source | Licence | Used by |
 |---|---|---|---|
-| `Co.upf` | Fully relativistic ONCVPSP 3.3.0 pseudopotential. TODO: name the library it came from. | TODO | `test_extend_upf.py` (spin-orbit), `test_extend_library.py` |
+| `Co.upf` | PseudoDojo fully relativistic PBE table v0.4, `Co/Co-sp_r.upf` (byte-identical), from <https://github.com/PseudoDojo/ONCVPSP-PBE-FR-PDv0.4>. Cite M. J. van Setten et al., Comput. Phys. Commun. 226, 39 (2018), doi:10.1016/j.cpc.2018.01.012. | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/), as listed for PseudoDojo in the SSSP licence file (the repository itself has no licence file) | `test_extend_upf.py` (spin-orbit), `test_extend_library.py` |
 | `sssp/K.nc.pbesol.z_9.oncvpsp4.sg15.v0.upf` | SG15 ONCV library (M. Schlipf and F. Gygi, Comput. Phys. Commun. 196, 36 (2015), doi:10.1016/j.cpc.2015.05.011; <http://www.quantum-simulation.org/potentials/sg15_oncv>), as included in an SSSP PBEsol efficiency library | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | `test_extend_upf.py` (OpenMX PAO path) |
 | `sssp/Ti.us.pbesol.z_12.uspp.gbrv.v1.4.upf` | GBRV ultrasoft library (K. F. Garrity, J. W. Bennett, K. M. Rabe and D. Vanderbilt, Comput. Mater. Sci. 81, 446 (2014), doi:10.1016/j.commatsci.2013.08.053; <http://www.physics.rutgers.edu/gbrv>), as included in an SSSP PBEsol efficiency library | [GNU GPL v3](https://www.gnu.org/licenses/gpl-3.0.en.html) | `test_extend_upf.py` (non-spin-orbit orthogonalisation) |
 
