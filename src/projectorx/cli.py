@@ -62,6 +62,33 @@ def _to_projectors(upfdict: newUPFDict) -> newProjectors:
     return upfdict.to_projectors(drop_unbound=True)
 
 
+def _parse_orbitals(values: list[str]) -> list[str]:
+    """Normalise orbital names: split on commas, strip, lowercase (``"4P, 5s"`` -> ``["4p", "5s"]``).
+
+    :raises ValueError: a value is not one digit followed by s, p, d or f.
+    """
+    orbitals = []
+    for group in values:
+        for orb in group.split(","):
+            orb = orb.strip().lower()
+            if not orb:
+                continue
+            if not re.fullmatch(r"[1-9][spdf]", orb):
+                raise ValueError(f"Invalid orbital '{orb}': expected a shell number and s/p/d/f, e.g. 4p or 5S.")
+            orbitals.append(orb)
+    return orbitals
+
+
+def _orbital_option_callback(values: list[str] | None) -> list[str] | None:
+    """Validate --orbital up front, so a typo gives a short usage error instead of a traceback."""
+    if not values:
+        return values
+    try:
+        return _parse_orbitals(values)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 def _resolve_orbitals(
     proj: newProjectors,
     element: str,
@@ -75,18 +102,7 @@ def _resolve_orbitals(
     present in `proj`.
     """
     if orbitals_override is not None:
-        orbitals = []
-        for group in orbitals_override:
-            for orb in group.split(","):
-                orb = orb.strip().lower()
-                if not orb:
-                    continue
-                if not re.fullmatch(r"[1-9][spdf]", orb):
-                    raise ValueError(
-                        f"Invalid orbital '{orb}': expected a shell number and s/p/d/f, e.g. 4p or 5S."
-                    )
-                orbitals.append(orb)
-        return orbitals
+        return _parse_orbitals(orbitals_override)
 
     pswfcs = list(set(p.label for p in proj))
     try:
@@ -231,6 +247,7 @@ def extend_upf(
     orbitals: list[str] = typer.Option(
         None,
         "--orbital",
+        callback=_orbital_option_callback,
         help=(
             "Orbital(s) to add, e.g. --orbital 4p,5s or --orbital 4p --orbital 5s. "
             "Defaults to whichever orbitals from --required-orbitals are missing from the UPF file."

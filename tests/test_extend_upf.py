@@ -114,3 +114,15 @@ def test_resolve_orbitals_override_normalised(given, expected):
 def test_resolve_orbitals_override_invalid(bad):
     with pytest.raises(ValueError, match="Invalid orbital"):
         _resolve_orbitals(None, "Ti", [bad], {})
+
+
+def test_extend_upf_invalid_orbital_is_a_short_usage_error(tmp_path):
+    """An invalid --orbital fails before any work, with a usage error and no traceback."""
+    upf = SSSP_DIR / "Ti.us.pbesol.z_12.uspp.gbrv.v1.4.upf"
+
+    result = runner.invoke(app, ["extend-upf", str(upf), "--output-dir", str(tmp_path), "--orbital", "4p,p4"])
+
+    assert result.exit_code == 2, result.output
+    assert "Invalid orbital 'p4'" in result.output
+    assert "Traceback" not in result.output
+    assert not (tmp_path / "Ti.dat").exists()
