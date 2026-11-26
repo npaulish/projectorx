@@ -1,6 +1,7 @@
 """Console script for projectorx."""
 
 import json
+import re
 from pathlib import Path
 
 import typer
@@ -74,7 +75,18 @@ def _resolve_orbitals(
     present in `proj`.
     """
     if orbitals_override is not None:
-        return [orb for group in orbitals_override for orb in group.split(",") if orb]
+        orbitals = []
+        for group in orbitals_override:
+            for orb in group.split(","):
+                orb = orb.strip().lower()
+                if not orb:
+                    continue
+                if not re.fullmatch(r"[1-9][spdf]", orb):
+                    raise ValueError(
+                        f"Invalid orbital '{orb}': expected a shell number and s/p/d/f, e.g. 4p or 5S."
+                    )
+                orbitals.append(orb)
+        return orbitals
 
     pswfcs = list(set(p.label for p in proj))
     try:

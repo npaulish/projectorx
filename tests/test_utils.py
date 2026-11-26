@@ -40,7 +40,7 @@ def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretr
     mock_tar = MagicMock()
     mock_tar_open.return_value.__enter__.return_value = mock_tar
 
-    def fake_extractall(path):
+    def fake_extractall(path, **kwargs):
         # Simulate extraction by creating the expected PAO directory
         extracted_pao = Path(path) / "openmx3.9/DFT_DATA19/PAO"
         extracted_pao.mkdir(parents=True, exist_ok=True)
@@ -58,7 +58,7 @@ def test_ensure_openmx_exists_downloads_and_extracts(mock_tar_open, mock_urlretr
     mock_urlretrieve.assert_called_once_with(utils.OPENMX_URL, tmp_tar_path)
     assert not tmp_tar_path.exists()  # renamed to tar_path, not left behind
     assert not tar_path.exists()  # cleaned up after extraction (non-CI mode)
-    mock_tar.extractall.assert_called_once_with(tmp_path)
+    mock_tar.extractall.assert_called_once_with(tmp_path, filter="data")
     assert result.exists()
     assert "openmx3.9/DFT_DATA19/PAO" in str(result)
 

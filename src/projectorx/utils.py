@@ -85,7 +85,12 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
     console.print("[blue]Extracting...[/blue]")
 
     with tarfile.open(tar_path, "r:gz") as tar:
-        tar.extractall(dest_dir)
+        if hasattr(tarfile, "data_filter"):
+            # Refuse absolute paths, links escaping dest_dir, device files, etc.
+            # (Python 3.12+, and 3.10.12+/3.11.4+ via security backports.)
+            tar.extractall(dest_dir, filter="data")
+        else:
+            tar.extractall(dest_dir)
 
     # Only delete tarball if not in CI mode (to allow caching)
     if not ci_mode:

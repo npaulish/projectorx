@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 from typer.testing import CliRunner
 
-from projectorx.cli import app
+from projectorx.cli import _resolve_orbitals, app
 
 runner = CliRunner()
 
@@ -85,3 +85,32 @@ def test_extend_upf_from_openmx_pao(tmp_path):
     mock_ensure.assert_called_once()
     assert "K14.0.pao" in result.output.replace("\n", "")
     _assert_dat_matches(tmp_path / "K.dat", SSSP_DIR / "K_reference.dat", n_header=2)
+
+
+def test_extend_upf_orbital_option_is_case_insensitive(tmp_path):
+    """`--orbital 4P` used to fail with KeyError: 'P'."""
+    upf = SSSP_DIR / "Ti.us.pbesol.z_12.uspp.gbrv.v1.4.upf"
+
+    result = runner.invoke(app, ["extend-upf", str(upf), "--output-dir", str(tmp_path), "--orbital", "4P"])
+
+    assert result.exit_code == 0, f"CLI failed: {result.output}\n{result.exception!r}"
+    _assert_dat_matches(tmp_path / "Ti.dat", SSSP_DIR / "Ti_reference.dat", n_header=2)
+
+
+@pytest.mark.parametrize(
+    ("given", "expected"),
+    [
+        (["4p"], ["4p"]),
+        (["4P,5S"], ["4p", "5s"]),
+        (["4p", "5s"], ["4p", "5s"]),
+        ([" 4p , 3D ,"], ["4p", "3d"]),
+    ],
+)
+def test_resolve_orbitals_override_normalised(given, expected):
+    assert _resolve_orbitals(None, "Ti", given, {}) == expected
+
+
+@pytest.mark.parametrize("bad", ["p4", "4x", "10p", "4", "4pp"])
+def test_resolve_orbitals_override_invalid(bad):
+    with pytest.raises(ValueError, match="Invalid orbital"):
+        _resolve_orbitals(None, "Ti", [bad], {})
