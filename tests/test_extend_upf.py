@@ -63,6 +63,17 @@ def test_extend_upf_orthogonalised(tmp_path, upf, reference, element, n_header):
     _assert_dat_matches(output_file, reference, n_header)
 
 
+def test_extend_upf_creates_missing_output_dir(tmp_path):
+    """A non-existent --output-dir (including parents) is created, as extend-library does."""
+    output_dir = tmp_path / "new" / "nested"
+    upf = SSSP_DIR / "Ti.us.pbesol.z_12.uspp.gbrv.v1.4.upf"
+
+    result = runner.invoke(app, ["extend-upf", str(upf), "--output-dir", str(output_dir)])
+
+    assert result.exit_code == 0, f"CLI failed: {result.output}\n{result.exception!r}"
+    _assert_dat_matches(output_dir / "Ti.dat", SSSP_DIR / "Ti_reference.dat", n_header=2)
+
+
 def test_extend_upf_from_openmx_pao(tmp_path):
     """K has no d shell, so 3d must be fitted to the OpenMX PAO (K14.0.pao, 9 valence e-)."""
     upf = SSSP_DIR / "K.nc.pbesol.z_9.oncvpsp4.sg15.v0.upf"

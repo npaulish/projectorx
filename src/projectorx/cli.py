@@ -198,7 +198,9 @@ def extend_upf_impl(
         console.print(f"[green]✓ {element} already has all required orbitals, nothing to add.[/green]")
     _add_orbitals(proj, element, orbitals_to_add, _get_z_valence(upfdict))
 
-    output_file = Path(output_dir) / f"{element}.dat"
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_file = output_dir / f"{element}.dat"
     proj.to_file(output_file)
     return output_file
 
