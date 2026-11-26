@@ -38,10 +38,11 @@ class newProjector(Projector):
     def j(self, value):
         if not isinstance(value, float):
             self._j = 0.0
-        elif np.abs(self.l - value) - 0.5 < 1e-8:
+        elif value > 0 and abs(abs(self.l - value) - 0.5) < 1e-8:
+            # j = l +/- 1/2, and j > 0 (so l = 0 only allows j = 1/2)
             self._j = value
         else:
-            raise ValueError(f"l={self.l}, j={self._j}")
+            raise ValueError(f"Invalid j={value} for l={self.l}: j must be l +/- 1/2 and positive")
 
     @property
     def label(self):  # noqa: F811 -- InitVar `label` above feeds this property via __post_init__

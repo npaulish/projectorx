@@ -116,22 +116,31 @@ def fit_rsq_projector(proj: Projector, n: int) -> float:
     def rsquare_radial_func(r, alpha):
         return rsquare_hydrogenic(r, l, n, alpha)
 
-    try:
-        pos_popt, pos_pcov = curve_fit(rsquare_radial_func, r, r**2 * y, p0=[3.0])[0:2]
-    except RuntimeError:
-        pos_popt = [0.0]
-        pos_pcov = [[100.0]]
+    # Fit both signs of the target (radial functions are defined up to a sign)
+    # and keep the better fit. A fit that fails, or yields a non-physical
+    # alpha (alpha <= 0 or not finite), is discarded rather than replaced by a
+    # dummy alpha = 0, which would silently produce an all-zero projector.
+    candidates = []
+    errors = []
+    for sign in (-1.0, 1.0):
+        try:
+            popt, pcov = curve_fit(rsquare_radial_func, r, r**2 * sign * y, p0=[3.0])[0:2]
+        except RuntimeError as exc:
+            errors.append(str(exc))
+            continue
+        alpha = float(popt[0])
+        if np.isfinite(alpha) and alpha > 0:
+            candidates.append((float(pcov[0][0]), alpha))
+        else:
+            errors.append(f"non-physical alpha={alpha}")
 
-    try:
-        neg_popt, neg_pcov = curve_fit(rsquare_radial_func, r, r**2 * -y, p0=[3.0])[0:2]
-    except RuntimeError:
-        neg_popt = [0.0]
-        neg_pcov = [[100.0]]
-
-    if pos_pcov[0][0] < neg_pcov[0][0]:
-        popt = pos_popt[0]
-    else:
-        popt = neg_popt[0]
+    if not candidates:
+        raise RuntimeError(
+            f"Hydrogenic fit to the PAO orbital failed (l={l}, n={n}): " + "; ".join(errors)
+        )
+    # Lowest variance wins; on a tie the negative-sign fit (listed first) is kept,
+    # as before.
+    popt = min(candidates, key=lambda c: c[0])[1]
 
     return popt
 
@@ -237,7 +246,24 @@ def fit_ortho_projectors(proj: Projector, n: int) -> float:
         overlap.append(ovlp)
 
     alpha_list = np.array(alpha_list)
-    ortho_loc = np.where(np.abs(overlap) == np.min(np.abs(overlap)))[0][0]
+    overlap = np.array(overlap)
+
+    # Orthogonality means the overlap changes sign between two grid points.
+    # Without a sign change the smallest |overlap| is just where both functions
+    # are small (typically the edge of the alpha range), not an orthogonal
+    # orbital, so refuse instead of silently returning it.
+    if not np.any(overlap):
+        raise ValueError(f"Inner projector for l={l} is zero; cannot orthogonalise against it.")
+    sign_change = np.nonzero(np.sign(overlap[:-1]) * np.sign(overlap[1:]) <= 0)[0]
+    if sign_change.size == 0:
+        raise ValueError(
+            f"No orthogonal hydrogenic orbital (l={l}, n={n}) found for alpha in "
+            f"[{alpha_list[0]:.1f}, {alpha_list[-1]:.1f}]: the overlap never changes sign "
+            f"(min |overlap| = {np.min(np.abs(overlap)):.3g})."
+        )
+    # Grid points next to a sign change; pick the one with the smallest |overlap|.
+    near_root = np.unique(np.concatenate([sign_change, sign_change + 1]))
+    ortho_loc = near_root[np.argmin(np.abs(overlap[near_root]))]
     alpha = alpha_list[ortho_loc]
     return alpha
 
