@@ -30,9 +30,7 @@ class newUPFDict(UPFDict):
 
         # Extract the pseudo wavefunctions, sorted by l and n
         if "chi" not in self["pswfc"]:
-            raise ValueError(
-                "This pseudopotential does not contain any pseudo-wavefunctions"
-            )
+            raise ValueError("This pseudopotential does not contain any pseudo-wavefunctions")
         soc = self.has_so()
         # If soc: add j info to self
         if soc:
@@ -43,14 +41,10 @@ class newUPFDict(UPFDict):
                     wfclist = [wfclist]
                 for i, wfc in enumerate(wfclist):
                     if self["pswfc"]["chi"][i]["index"] != wfc["index"]:
-                        raise ValueError(
-                            "`PP_CHI/index` and `PP_RELWFC/index` do not match"
-                        )
+                        raise ValueError("`PP_CHI/index` and `PP_RELWFC/index` do not match")
                     self["pswfc"]["chi"][i]["j"] = wfc["jchi"]
         if soc:
-            chis = sorted(
-                self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["j"], chi["n"])
-            )
+            chis = sorted(self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["j"], chi["n"]))
         else:
             chis = sorted(self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["n"]))
         data = np.transpose([chi["content"] for chi in chis])
@@ -106,9 +100,7 @@ class newUPFDict(UPFDict):
 
         # Extract the pseudo wavefunctions, sorted by l and n
         if "chi" not in self["pswfc"]:
-            raise ValueError(
-                "This pseudopotential does not contain any pseudo-wavefunctions"
-            )
+            raise ValueError("This pseudopotential does not contain any pseudo-wavefunctions")
         soc = self.has_so()
         # If soc: add j info to self
         if soc:
@@ -119,14 +111,10 @@ class newUPFDict(UPFDict):
                     wfclist = [wfclist]
                 for i, wfc in enumerate(wfclist):
                     if self["pswfc"]["chi"][i]["index"] != wfc["index"]:
-                        raise ValueError(
-                            "`PP_CHI/index` and `PP_RELWFC/index` do not match"
-                        )
+                        raise ValueError("`PP_CHI/index` and `PP_RELWFC/index` do not match")
                     self["pswfc"]["chi"][i]["j"] = wfc["jchi"]
         if soc:
-            chis = sorted(
-                self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["j"], chi["n"])
-            )
+            chis = sorted(self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["j"], chi["n"]))
         else:
             chis = sorted(self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["n"]))
         # data = np.transpose([chi["content"] for chi in chis])
@@ -148,10 +136,7 @@ class newUPFDict(UPFDict):
                 for chi in chis
             ]
         else:
-            projector = [
-                newProjector(xmesh, chi["content"], int(chi["l"]), label=chi["label"])
-                for chi in chis
-            ]
+            projector = [newProjector(xmesh, chi["content"], int(chi["l"]), label=chi["label"]) for chi in chis]
 
         return newProjectors(projector)
 

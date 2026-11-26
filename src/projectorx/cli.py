@@ -109,8 +109,7 @@ def _resolve_orbitals(
         return [orb for orb in required_orbital_list[element] if orb not in pswfcs]
     except KeyError as exc:
         raise KeyError(
-            f"No required orbitals defined for element '{element}'. "
-            "Specify orbitals explicitly with --orbital."
+            f"No required orbitals defined for element '{element}'. Specify orbitals explicitly with --orbital."
         ) from exc
 
 
@@ -127,9 +126,7 @@ def _existing_shells(proj: newProjectors) -> list[str]:
     return sorted({p.label for p in proj if not p.label.startswith("0")})
 
 
-def _add_orbitals(
-    proj: newProjectors, element: str, orbitals: list[str], z_valence: float | None = None
-) -> None:
+def _add_orbitals(proj: newProjectors, element: str, orbitals: list[str], z_valence: float | None = None) -> None:
     """Fit and add `orbitals` to `proj` in place."""
     pswfcs = _existing_shells(proj)
     str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
@@ -143,9 +140,7 @@ def _add_orbitals(
             # no inner shell found, can only find orbitals from third-party PAO library
             console.print(f"[cyan]No inner shell found for {orb}, fitting from PAO file.[/cyan]")
 
-            pao_path = utils.ensure_openmx_exists(
-                Path.home() / ".projectorx" / "paolibs/openmx3.9/DFT_DATA19/PAO/"
-            )
+            pao_path = utils.ensure_openmx_exists(Path.home() / ".projectorx" / "paolibs/openmx3.9/DFT_DATA19/PAO/")
             pao_file = utils.select_pao_file(pao_path, element, z_valence)
             pao = newProjectors.from_pao(pao_file, n, l)[0]
             alpha = fit_rsq_projector(pao, n)
@@ -161,25 +156,19 @@ def _add_orbitals(
             if not spin_orbit:
                 ref = None
                 for p in proj:
-                    if (int(p.label[0]) == int(orb[0]) - 1) and (
-                        p.label[1].lower() == orb[1].lower()
-                    ):
+                    if (int(p.label[0]) == int(orb[0]) - 1) and (p.label[1].lower() == orb[1].lower()):
                         ref = p
             else:  # spin_orbit
                 ref = []
                 for p in proj:
-                    if (int(p.label[0]) == int(orb[0]) - 1) and (
-                        p.label[1].lower() == orb[1].lower()
-                    ):
+                    if (int(p.label[0]) == int(orb[0]) - 1) and (p.label[1].lower() == orb[1].lower()):
                         ref.append(p)
 
             if ref is None:
                 raise ValueError(f"Can't find inner projectors for {orb}")
             if isinstance(ref, list):
                 if len(ref) not in [1, 2]:
-                    raise ValueError(
-                        f"Wrong inner projectors for {orb}, found {len(ref)}"
-                    )
+                    raise ValueError(f"Wrong inner projectors for {orb}, found {len(ref)}")
             if spin_orbit:
                 for ref_ in ref:
                     alpha = fit_ortho_projectors(ref_, n)
@@ -348,8 +337,7 @@ def extend_library_impl(
         json.dump(projectors_summary, fp, indent=2)
 
     console.print(
-        f"[green]✓ Extended {len(projectors_summary)}/{len(upf_files)} pseudopotentials, "
-        f"saved to {output_dir}[/green]"
+        f"[green]✓ Extended {len(projectors_summary)}/{len(upf_files)} pseudopotentials, saved to {output_dir}[/green]"
     )
     if failures:
         console.print(f"[yellow]⚠ {len(failures)} pseudopotential(s) failed:[/yellow]")

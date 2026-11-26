@@ -40,7 +40,7 @@ requires-python = ">= 3.10"
 test = [
     "coverage>=7.6",  # testing
     "pytest>=8.3",  # testing
-    "ruff>=0.14",  # linting
+    "ruff>=0.17,<0.18",  # linting and formatting; pinned to a minor version so CI and local formatting agree
     "ty>=0.0.1a24", # checking types
     "ipdb>=0.13", # debugging
 ]

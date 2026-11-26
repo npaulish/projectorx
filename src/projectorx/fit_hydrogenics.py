@@ -21,9 +21,7 @@ def hydrogenic(r: np.ndarray, l: int, n: int, alpha: float) -> np.ndarray:
     elif l == 2:
         result = d(r, n, alpha)
     else:
-        raise ValueError(
-            "Only support s, p and d orbitals. The l should be either 0 or 1 or 2"
-        )
+        raise ValueError("Only support s, p and d orbitals. The l should be either 0 or 1 or 2")
     result[np.abs(result) < 1e-35] = 0.0
     return result
 
@@ -54,9 +52,7 @@ def s(r: np.ndarray, n: int, alpha: float) -> np.ndarray:
     if n == 0:
         result = 2 * alpha ** (3 / 2) * np.exp(-alpha * r)
     elif n == 1:
-        result = (
-            1 / np.sqrt(8) * alpha ** (3 / 2) * (2 - alpha * r) * np.exp(-alpha * r / 2)
-        )
+        result = 1 / np.sqrt(8) * alpha ** (3 / 2) * (2 - alpha * r) * np.exp(-alpha * r / 2)
     else:
         raise ValueError("only support n = 0 or 1 for s orbitals")
 
@@ -69,14 +65,7 @@ def p(r: np.ndarray, n: int, alpha: float) -> np.ndarray:
     if n == 0:
         result = 1 / np.sqrt(24) * alpha ** (3 / 2) * alpha * r * np.exp(-alpha * r / 2)
     elif n == 1:
-        result = (
-            4
-            / 81
-            / np.sqrt(6)
-            * alpha ** (3 / 2)
-            * (6 * alpha * r - alpha**2 * r**2)
-            * np.exp(-alpha * r / 3)
-        )
+        result = 4 / 81 / np.sqrt(6) * alpha ** (3 / 2) * (6 * alpha * r - alpha**2 * r**2) * np.exp(-alpha * r / 3)
     else:
         raise ValueError("Only support n = 0 or 1 for p orbitals")
 
@@ -87,14 +76,7 @@ def d(r: np.ndarray, n: int, alpha: float) -> np.ndarray:
     """Hydrogenic radial function for d orbitals."""
 
     if n == 0:
-        result = (
-            4
-            / 81
-            / np.sqrt(30)
-            * alpha ** (3 / 2)
-            * (alpha * r) ** 2
-            * np.exp(-alpha * r / 3)
-        )
+        result = 4 / 81 / np.sqrt(30) * alpha ** (3 / 2) * (alpha * r) ** 2 * np.exp(-alpha * r / 3)
     else:
         raise ValueError("Only support n = 1 for d orbitals")
 
@@ -112,6 +94,7 @@ def fit_rsq_projector(proj: Projector, n: int) -> float:
     r = proj.r
     y = proj.y
     l = proj.l
+
     # y = norm_upf(r, y)
     def rsquare_radial_func(r, alpha):
         return rsquare_hydrogenic(r, l, n, alpha)
@@ -135,9 +118,7 @@ def fit_rsq_projector(proj: Projector, n: int) -> float:
             errors.append(f"non-physical alpha={alpha}")
 
     if not candidates:
-        raise RuntimeError(
-            f"Hydrogenic fit to the PAO orbital failed (l={l}, n={n}): " + "; ".join(errors)
-        )
+        raise RuntimeError(f"Hydrogenic fit to the PAO orbital failed (l={l}, n={n}): " + "; ".join(errors))
     # Lowest variance wins; on a tie the negative-sign fit (listed first) is kept,
     # as before.
     popt = min(candidates, key=lambda c: c[0])[1]
@@ -204,12 +185,8 @@ def fit_projector(proj: Projector, n: int) -> float:
     def radial_func(r, alpha):
         return hydrogenic(r, l, n, alpha)
 
-    pos_popt, pos_pcov = curve_fit(radial_func, r, y, p0=[5.0], bounds=alpha_bounds)[
-        0:2
-    ]
-    neg_popt, neg_pcov = curve_fit(radial_func, r, -y, p0=[5.0], bounds=alpha_bounds)[
-        0:2
-    ]
+    pos_popt, pos_pcov = curve_fit(radial_func, r, y, p0=[5.0], bounds=alpha_bounds)[0:2]
+    neg_popt, neg_pcov = curve_fit(radial_func, r, -y, p0=[5.0], bounds=alpha_bounds)[0:2]
 
     if pos_pcov[0][0] < neg_pcov[0][0]:
         popt = pos_popt[0]

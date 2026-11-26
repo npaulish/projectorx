@@ -87,9 +87,7 @@ class newProjectors(Projectors):
             " ".join([f"{proj.l:3d}" for proj in self.data]),
             " ".join([f"{proj.j:.1f}" for proj in self.data]),
         ]
-        content = np.concatenate(
-            [np.vstack([self.data[0].x, self.data[0].r]), [p.y for p in self.data]]
-        ).transpose()
+        content = np.concatenate([np.vstack([self.data[0].x, self.data[0].r]), [p.y for p in self.data]]).transpose()
         lines += [" ".join([f"{v:18.12e}" for v in row]) for row in content]
         return "\n".join(lines)
 
@@ -137,15 +135,10 @@ class newProjectors(Projectors):
     def from_str_soc(cls, string: str) -> "Projectors":
         """Create a Projectors object from a string that follows the format for ``pw2wannier90`` and ``Wannier90``."""
         lines = [l for l in string.split("\n") if l]
-        content = np.array(
-            [[float(v) for v in row.split()] for row in lines[3:]]
-        ).transpose()
+        content = np.array([[float(v) for v in row.split()] for row in lines[3:]]).transpose()
         lvals = [int(l) for l in lines[1].split()]
         jvals = [float(j) for j in lines[2].split()]
-        data = [
-            newProjector(content[0], y, l, j)
-            for l, j, y in zip(lvals, jvals, content[2:], strict=True)
-        ]
+        data = [newProjector(content[0], y, l, j) for l, j, y in zip(lvals, jvals, content[2:], strict=True)]
 
         return cls(data)
 

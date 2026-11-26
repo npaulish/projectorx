@@ -111,7 +111,7 @@ dat_file = extend_upf_impl("Fe.upf", output_dir=Path("out"), orbitals=["4p"])
 
 result = extend_library_impl(Path("pseudos"), output_dir=Path("external_projectors"))
 result["projectors"]  # same content as projectors.json
-result["failures"]    # {file name: error message}
+result["failures"]  # {file name: error message}
 ```
 
 If OpenMX is needed but unavailable, these raise

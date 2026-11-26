@@ -1,4 +1,4 @@
-""" Utility functions for ProjectorX. """
+"""Utility functions for ProjectorX."""
 
 import os
 import re
@@ -61,10 +61,7 @@ def ensure_openmx_exists(pao_path: Path, auto: bool = False):
                 f"and extract it so that {pao_path} exists."
             )
     else:
-        console.print(
-            "[cyan]Running in non-interactive or CI mode — downloading automatically...[/cyan]"
-            )
-
+        console.print("[cyan]Running in non-interactive or CI mode — downloading automatically...[/cyan]")
 
     # Use cached tarball if it exists
     if tar_path.exists():

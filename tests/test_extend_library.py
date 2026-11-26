@@ -28,12 +28,15 @@ def test_extend_library_processes_all_and_skips_broken_files():
         with warnings.catch_warnings():
             # upf_tools warns when it can't determine broken.upf's version.
             warnings.simplefilter("ignore")
-            result = runner.invoke(app, [
-                "extend-library",
-                str(test_data_dir),
-                "--output-dir",
-                tmpdir,
-            ])
+            result = runner.invoke(
+                app,
+                [
+                    "extend-library",
+                    str(test_data_dir),
+                    "--output-dir",
+                    tmpdir,
+                ],
+            )
 
         assert result.exit_code == 0, f"CLI failed: {result.output}"
 
@@ -67,14 +70,17 @@ def test_extend_library_stops_once_when_openmx_unavailable(tmp_path):
         "projectorx.utils.ensure_openmx_exists",
         side_effect=utils.OpenMXUnavailableError("OpenMX download declined."),
     ) as mock_ensure:
-        result = runner.invoke(app, [
-            "extend-library",
-            str(input_dir),
-            "--output-dir",
-            str(tmp_path / "out"),
-            "--required-orbitals",
-            str(required),
-        ])
+        result = runner.invoke(
+            app,
+            [
+                "extend-library",
+                str(input_dir),
+                "--output-dir",
+                str(tmp_path / "out"),
+                "--required-orbitals",
+                str(required),
+            ],
+        )
 
     assert result.exit_code == 1, result.output
     mock_ensure.assert_called_once()

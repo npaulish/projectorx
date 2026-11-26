@@ -29,14 +29,16 @@ def _upf(chis: list[dict]) -> newUPFDict:
 def _zn_like() -> newUPFDict:
     """Same labels and occupations as Zn.paw.pbesol.z_12.atompaw.jth.v1.1-std.upf."""
     unbound = np.sin(R)  # oscillating and non-decaying, like the real ones
-    return _upf([
-        _chi("4S", 0, 1, 2.0),
-        _chi("0S", 0, 2, 0.0, unbound),
-        _chi("0P", 1, 1, 0.0, unbound),
-        _chi("0P", 1, 2, 0.0, unbound),
-        _chi("3D", 2, 1, 10.0),
-        _chi("0D", 2, 2, 0.0, unbound),
-    ])
+    return _upf(
+        [
+            _chi("4S", 0, 1, 2.0),
+            _chi("0S", 0, 2, 0.0, unbound),
+            _chi("0P", 1, 1, 0.0, unbound),
+            _chi("0P", 1, 2, 0.0, unbound),
+            _chi("3D", 2, 1, 10.0),
+            _chi("0D", 2, 2, 0.0, unbound),
+        ]
+    )
 
 
 @pytest.mark.parametrize(

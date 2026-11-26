@@ -21,26 +21,30 @@ def _proj(label: str, l: int, n: int, alpha: float) -> newProjector:
 
 def _jth_zn_like() -> newProjectors:
     """Zn JTH PAW labels: 4S, 0S, 0P, 0P, 3D, 0D (no real p shell)."""
-    return newProjectors([
-        _proj("4s", 0, 0, 2.0),
-        _proj("0s", 0, 1, 2.0),
-        _proj("0p", 1, 0, 2.0),
-        _proj("0p", 1, 0, 3.0),
-        _proj("3d", 2, 0, 3.0),
-        _proj("0d", 2, 0, 5.0),
-    ])
+    return newProjectors(
+        [
+            _proj("4s", 0, 0, 2.0),
+            _proj("0s", 0, 1, 2.0),
+            _proj("0p", 1, 0, 2.0),
+            _proj("0p", 1, 0, 3.0),
+            _proj("3d", 2, 0, 3.0),
+            _proj("0d", 2, 0, 5.0),
+        ]
+    )
 
 
 def _jth_mo_like() -> newProjectors:
     """Mo JTH PAW labels: 4S, 5S, 0P, 4P, 4D, 0D (one real p shell, 4p)."""
-    return newProjectors([
-        _proj("4s", 0, 0, 3.0),
-        _proj("5s", 0, 1, 3.0),
-        _proj("0p", 1, 0, 2.0),
-        _proj("4p", 1, 0, 4.0),
-        _proj("4d", 2, 0, 4.0),
-        _proj("0d", 2, 0, 6.0),
-    ])
+    return newProjectors(
+        [
+            _proj("4s", 0, 0, 3.0),
+            _proj("5s", 0, 1, 3.0),
+            _proj("0p", 1, 0, 2.0),
+            _proj("4p", 1, 0, 4.0),
+            _proj("4d", 2, 0, 4.0),
+            _proj("0d", 2, 0, 6.0),
+        ]
+    )
 
 
 def test_existing_shells_ignores_zero_labels():

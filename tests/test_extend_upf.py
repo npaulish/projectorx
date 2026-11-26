@@ -22,9 +22,7 @@ def _assert_dat_matches(generated: Path, reference: Path, n_header: int) -> None
 
     ref_data = np.loadtxt(reference, skiprows=n_header)
     gen_data = np.loadtxt(generated, skiprows=n_header)
-    assert ref_data.shape == gen_data.shape, (
-        f"Shape mismatch: reference {ref_data.shape}, generated {gen_data.shape}"
-    )
+    assert ref_data.shape == gen_data.shape, f"Shape mismatch: reference {ref_data.shape}, generated {gen_data.shape}"
     np.testing.assert_allclose(
         gen_data,
         ref_data,
