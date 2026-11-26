@@ -52,6 +52,15 @@ def _get_z_valence(upfdict: newUPFDict) -> float | None:
         return None
 
 
+def _to_projectors(upfdict: newUPFDict) -> newProjectors:
+    """Convert a UPF to projectors, leaving out unbound partial waves (JTH PAW ``0S``/``0P``/``0D``)."""
+    dropped = upfdict.unbound_partial_waves()
+    if dropped:
+        labels = ", ".join(str(chi.get("label", "")).strip() for chi in dropped)
+        console.print(f"[yellow]Dropping {len(dropped)} unbound partial wave(s): {labels}[/yellow]")
+    return upfdict.to_projectors(drop_unbound=True)
+
+
 def _resolve_orbitals(
     proj: newProjectors,
     element: str,
@@ -179,7 +188,7 @@ def extend_upf_impl(
 
     upfdict = _load_upf(Path(input_file))
     element = _get_element(upfdict)
-    proj = upfdict.to_projectors()
+    proj = _to_projectors(upfdict)
 
     with open(required_orbitals, encoding="utf-8") as fp:
         required_orbital_list = json.load(fp)
@@ -261,7 +270,7 @@ def extend_library_impl(
         try:
             upfdict = _load_upf(upf_file)
             element = _get_element(upfdict)
-            proj = upfdict.to_projectors()
+            proj = _to_projectors(upfdict)
 
             orbitals_to_add = _resolve_orbitals(proj, element, None, required_orbital_list)
             if not orbitals_to_add:

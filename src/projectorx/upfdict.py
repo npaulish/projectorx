@@ -65,10 +65,36 @@ class newUPFDict(UPFDict):
 
         return "\n".join(dat)
 
-    def to_projectors(self) -> newProjectors:
+    @staticmethod
+    def is_unbound_partial_wave(chi: dict) -> bool:
+        """Whether a ``PP_CHI`` entry is an unbound partial wave rather than an atomic orbital.
+
+        JTH PAW datasets (atompaw) store extra partial waves at chosen reference
+        energies, labelled ``0S``, ``0P``, ``0D`` with occupation 0. They are not
+        normalisable, do not decay, and are unsuitable as Wannier projectors.
+        Entries without a label are never treated as unbound.
+        """
+        label = str(chi.get("label", "")).strip()
+        try:
+            occupation = float(chi.get("occupation", 0.0))
+        except (TypeError, ValueError):
+            return False
+        return label.startswith("0") and occupation == 0.0
+
+    def unbound_partial_waves(self) -> list[dict]:
+        """The ``PP_CHI`` entries that :meth:`is_unbound_partial_wave` flags."""
+        chis = self["pswfc"].get("chi", [])
+        if isinstance(chis, dict):
+            chis = [chis]
+        return [chi for chi in chis if self.is_unbound_partial_wave(chi)]
+
+    def to_projectors(self, drop_unbound: bool = False) -> newProjectors:
         """Generate newProjectors instance from upfDict.
 
         What's different: newProjector add support for soc and record labels of projectors
+
+        :param drop_unbound: leave out unbound partial waves (see :meth:`is_unbound_partial_wave`).
+        :raises ValueError: no pseudo-wavefunctions are left.
         """
         # Fetch the r-mesh
         rmesh = self["mesh"]["r"]
@@ -104,6 +130,11 @@ class newUPFDict(UPFDict):
         else:
             chis = sorted(self["pswfc"]["chi"], key=lambda chi: (chi["l"], chi["n"]))
         # data = np.transpose([chi["content"] for chi in chis])
+
+        if drop_unbound:
+            chis = [chi for chi in chis if not self.is_unbound_partial_wave(chi)]
+            if not chis:
+                raise ValueError("This pseudopotential contains only unbound partial waves")
 
         if soc:
             projector = [
