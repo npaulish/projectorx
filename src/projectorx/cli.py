@@ -77,11 +77,24 @@ def _resolve_orbitals(
         ) from exc
 
 
+def _existing_shells(proj: newProjectors) -> list[str]:
+    """Labels of the actual shells (e.g. ``"3p"``) present in `proj`.
+
+    Pseudo-wavefunctions whose label has principal quantum number 0 are not shells:
+    JTH PAW datasets (atompaw) label their extra unbound partial waves ``0S``,
+    ``0P``, ``0D``, and `newProjector` itself falls back to ``0<l>`` when a
+    pseudo-wavefunction has no label. Counting them as shells would send a missing
+    orbital down the wrong path (e.g. Zn 4p looking for a non-existent 3p instead of
+    using OpenMX, or Mo 5p asking for an unsupported second p node).
+    """
+    return sorted({p.label for p in proj if not p.label.startswith("0")})
+
+
 def _add_orbitals(
     proj: newProjectors, element: str, orbitals: list[str], z_valence: float | None = None
 ) -> None:
     """Fit and add `orbitals` to `proj` in place."""
-    pswfcs = list(set(p.label for p in proj))
+    pswfcs = _existing_shells(proj)
     str2l = {"s": 0, "p": 1, "d": 2, "f": 3}
     spin_orbit = hasattr(proj[0], "j")
 
