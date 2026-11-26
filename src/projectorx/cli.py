@@ -250,6 +250,10 @@ def extend_library_impl(
     Returns a dict with `"projectors"` (the summary also written to
     `output_dir/projectors.json`) and `"failures"` (filename -> error message
     for files that could not be extended).
+
+    Outputs are named ``<element>.dat``, so only one file per element can be
+    extended: the first one (in sorted filename order) that succeeds is used, and
+    any later file for the same element is recorded in `"failures"`.
     """
     input_dir = Path(input_dir)
     output_dir = Path(output_dir)
@@ -266,12 +270,20 @@ def extend_library_impl(
 
     projectors_summary = {}
     failures = {}
+    # element -> file its .dat was written from. Outputs are named by element, so
+    # a second file for the same element would silently overwrite the first.
+    written_from: dict[str, str] = {}
 
     for upf_file in upf_files:
         console.print(f"[bold cyan]Processing:[/bold cyan] {upf_file.name}")
         try:
             upfdict = _load_upf(upf_file)
             element = _get_element(upfdict)
+            if element in written_from:
+                raise ValueError(
+                    f"duplicate element {element}: already extended from "
+                    f"{written_from[element]} (first in sorted order), skipped"
+                )
             proj = _to_projectors(upfdict)
 
             orbitals_to_add = _resolve_orbitals(proj, element, None, required_orbital_list)
@@ -291,6 +303,7 @@ def extend_library_impl(
             continue
 
         proj.to_file(output_dir / f"{element}.dat")
+        written_from[element] = upf_file.name
         spin_orbit = hasattr(proj[0], "j")
         projectors_summary[element] = [
             {

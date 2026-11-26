@@ -9,7 +9,7 @@ import numpy as np
 from typer.testing import CliRunner
 
 from projectorx import utils
-from projectorx.cli import app
+from projectorx.cli import app, extend_library_impl
 
 runner = CliRunner()
 
@@ -79,3 +79,31 @@ def test_extend_library_stops_once_when_openmx_unavailable(tmp_path):
     assert result.exit_code == 1, result.output
     mock_ensure.assert_called_once()
     assert "declined" in result.output
+
+
+def test_extend_library_duplicate_element_is_not_overwritten(tmp_path):
+    """Two files for the same element: the first (sorted) is used, the second is reported.
+
+    Outputs are named <element>.dat, so previously the second file silently
+    overwrote the first one's output and summary entry.
+    """
+    data_dir = Path(__file__).parent / "data"
+    input_dir = tmp_path / "pseudos"
+    input_dir.mkdir()
+    shutil.copy(data_dir / "Co.upf", input_dir / "Co.upf")
+    shutil.copy(data_dir / "Co.upf", input_dir / "Co_other.upf")
+    output_dir = tmp_path / "out"
+
+    with patch(
+        "projectorx.utils.ensure_openmx_exists",
+        side_effect=AssertionError("OpenMX not expected"),
+    ):
+        result = extend_library_impl(input_dir, output_dir)
+
+    assert list(result["projectors"]) == ["Co"]
+    assert list(result["failures"]) == ["Co_other.upf"]
+    assert "duplicate element Co" in result["failures"]["Co_other.upf"]
+    assert "Co.upf" in result["failures"]["Co_other.upf"]
+
+    ref = np.loadtxt(data_dir / "Co_reference.dat", skiprows=3)
+    np.testing.assert_allclose(np.loadtxt(output_dir / "Co.dat", skiprows=3), ref, rtol=1e-5, atol=1e-7)
